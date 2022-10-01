@@ -1,52 +1,58 @@
-import {
-  Container,
-  Text,
-  Title,
-  Card,
-  Group,
-  ActionIcon,
-  Button,
-  Checkbox,
-} from "@mantine/core";
+import { Container, Title, Button } from "@mantine/core";
 import React, { useEffect, useState } from "react";
-import { Trash, Pencil } from "tabler-icons-react";
 import CreateModal from "../../components/CreateModal";
-import EditModal from "../../components/EditModal";
-import * as api from "../../api/api";
 import Tasks from "./Tasks";
 import { Loader } from "@mantine/core";
 import { showError, showSuccess } from "../../utils/notifications";
+import MainHeader from "../../layouts/Header/MainHeader";
+import { useAuth } from "../../context/provideAuth";
+import request from "../../utils/ajaxManager";
 
 const Todo = () => {
   const [openedCreateTask, setOpenedCreateTask] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingButton, setLoadingButton] = useState(false);
 
+  const auth = useAuth();
   const [tasks, setTasks] = useState([]);
 
   const getTasks = async () => {
-    let data = await api.getTasksFetch();
-    if (data) {
-      setTasks(data.data);
-    } else {
-      showError();
-    }
+    await request(
+      "/task",
+      "GET",
+      {},
+      {
+        Authorization: "Bearer " + auth.token,
+      },
+      (response) => setTasks(response.data),
+      () => showError()
+    );
     setLoading(false);
   };
 
   const addTask = async (content) => {
     setLoadingButton(true);
-    setLoadingButton(true);
-    const data = await api.addTaskFetch(content);
-    if (data) {
-      await getTasks();
-      setLoadingButton(false);
-      setOpenedCreateTask(false);
-      showSuccess();
-    } else {
-      setOpenedCreateTask(false);
-      showError();
-    }
+    let formData = new FormData();
+    formData.append("content", content);
+
+    await request(
+      "/task",
+      "POST",
+      formData,
+      {
+        Authorization: "Bearer " + auth.token,
+      },
+      () => {
+        getTasks();
+        setLoadingButton(false);
+        setOpenedCreateTask(false);
+        showSuccess();
+      },
+      () => {
+        setOpenedCreateTask(false);
+        showError();
+      }
+    );
   };
 
   useEffect(() => {
@@ -56,6 +62,7 @@ const Todo = () => {
 
   return (
     <>
+      <MainHeader />
       <Container mt={50}>
         <Title order={1}>My tasks</Title>
         {loading ? (
@@ -69,7 +76,7 @@ const Todo = () => {
             setOpenedCreateTask(true);
           }}
           fullWidth
-          mt={"md"}
+          mt={25}
         >
           Добавить новую задачу
         </Button>

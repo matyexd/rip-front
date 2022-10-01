@@ -1,23 +1,23 @@
 import React from "react";
 import { MantineProvider } from "@mantine/core";
 import { NotificationsProvider } from "@mantine/notifications";
-import Todo from "./pages/Todo/Todo";
-import Chat from "./pages/Chat/Chat";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
+import ProvideAuth from "./context/provideAuth";
+import PrivateRoutes from "./routes/privateRoutes";
+import PublicRoutes from "./routes/publicRoutes";
 
 function App() {
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
-      <NotificationsProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Todo />} />
-            <Route path="/chat" element={<Chat />} />
-          </Routes>
-        </BrowserRouter>
-        ,
-      </NotificationsProvider>
-    </MantineProvider>
+    <ProvideAuth>
+      <MantineProvider withGlobalStyles withNormalizeCSS>
+        <NotificationsProvider>
+          <BrowserRouter>
+            <PrivateRoutes />
+            <PublicRoutes />
+          </BrowserRouter>
+        </NotificationsProvider>
+      </MantineProvider>
+    </ProvideAuth>
   );
 }
 

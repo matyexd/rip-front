@@ -7,9 +7,10 @@ import {
   TextInput,
 } from "@mantine/core";
 import { Check, Pencil, Trash, PlaystationX } from "tabler-icons-react";
-import * as api from "../../api/api";
 import React, { useState } from "react";
 import { showError, showSuccess } from "../../utils/notifications";
+import request from "../../utils/ajaxManager";
+import { useAuth } from "../../context/provideAuth";
 
 const editTaskInputDefaultState = {
   id: -1,
@@ -19,6 +20,7 @@ const editTaskInputDefaultState = {
 
 const Tasks = ({ tasks, setTasks, getTasks }) => {
   const [editTaskInput, setEditTaskInput] = useState(editTaskInputDefaultState);
+  const auth = useAuth();
 
   const editTaskStatus = async (id, status) => {
     setTasks((prevState) =>
@@ -26,41 +28,64 @@ const Tasks = ({ tasks, setTasks, getTasks }) => {
         item.id === id ? { ...item, isDone: !status } : item
       )
     );
-    let data = await api.editStatusTaskFetch({ id: id, isDone: !status });
-    if (!data) {
-      setTasks((prevState) =>
-        prevState.map((item) =>
-          item.id === id ? { ...item, isDone: status } : item
-        )
-      );
-      showError();
-    }
+
+    await request(
+      "/task",
+      "PUT",
+      { id: id, isDone: !status },
+      {
+        Authorization: "Bearer " + auth.token,
+      },
+      (response) => response,
+      () => {
+        setTasks((prevState) =>
+          prevState.map((item) =>
+            item.id === id ? { ...item, isDone: status } : item
+          )
+        );
+        showError();
+      }
+    );
   };
 
   const deleteTask = async (id) => {
-    const data = api.deleteTaskFetch(id);
     setTasks((prevState) => prevState.filter((item) => item.id !== id));
-    if (data) {
-      showSuccess();
-    } else {
-      showError();
-      getTasks();
-    }
+    await request(
+      `/task/${id}`,
+      "DELETE",
+      {},
+      {
+        Authorization: "Bearer " + auth.token,
+      },
+      () => showSuccess(),
+      () => {
+        showError();
+        getTasks();
+      }
+    );
   };
 
   const editTask = async (id, content) => {
-    let data = await api.editTaskFetch(id, content);
-    if (data) {
-      setTasks((prevState) =>
-        prevState.map((item) =>
-          item.id === id ? { ...item, content: content } : item
-        )
-      );
-      setEditTaskInput(editTaskInputDefaultState);
-      showSuccess();
-    } else {
-      showError();
-    }
+    await request(
+      "/task",
+      "PUT",
+      { id: id, content: content },
+      {
+        Authorization: "Bearer " + auth.token,
+      },
+      () => {
+        setTasks((prevState) =>
+          prevState.map((item) =>
+            item.id === id ? { ...item, content: content } : item
+          )
+        );
+        setEditTaskInput(editTaskInputDefaultState);
+        showSuccess();
+      },
+      () => {
+        showError();
+      }
+    );
   };
 
   return (
